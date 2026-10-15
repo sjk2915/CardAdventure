@@ -1,48 +1,96 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/ActorComponent.h"
+#include "Subsystems/GameInstanceSubsystem.h"
 #include "Engine/DataTable.h"
 #include "CardData.h"
 #include "CardManager.generated.h"
 
-UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
-class CARDADVENTURE_API UCardManager : public UActorComponent
+class ACardCharacter;
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnHandUpdatedSignature);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnDeckCountsUpdatedSignature, int32, DrawPileCount, int32, DiscardPileCount);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnManaChangedSignature, FManaGroup, NewMana);
+
+UCLASS()
+class CARDADVENTURE_API UCardManager : public UGameInstanceSubsystem
 {
 	GENERATED_BODY()
 
 public:
-	UCardManager();
+	virtual void Initialize(FSubsystemCollectionBase &Collection) override;
+	virtual void Deinitialize() override;
 
-protected:
-	virtual void BeginPlay() override;
+	// --- 델리게이트 ---
+	UPROPERTY(BlueprintAssignable, Category = "Card|Events")
+	FOnHandUpdatedSignature OnHandUpdated;
 
-public:
-	// 카드 데이터 테이블 에셋 연결 (에디터에서 지정)
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Card System")
+	UPROPERTY(BlueprintAssignable, Category = "Card|Events")
+	FOnDeckCountsUpdatedSignature OnDeckCountsUpdated;
+
+	UPROPERTY(BlueprintAssignable, Category = "Mana|Events")
+	FOnManaChangedSignature OnManaChanged;
+
+	void UpdateDeckCounts()
+	{
+		OnDeckCountsUpdated.Broadcast(DrawPile.Num(), DiscardPile.Num());
+	}
+
+	// --- 덱 데이터 (FCardInstance로 변경) ---
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Card|Deck")
+	TArray<FCardInstance> Deck;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Card|Battle")
+	TArray<FCardInstance> DrawPile;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Card|Battle")
+	TArray<FCardInstance> Hand;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Card|Battle")
+	TArray<FCardInstance> DiscardPile;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Card|Data")
 	UDataTable *CardDataTable;
 
-	// 덱 (Draw Pile) - 카드 ID 목록
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Card System")
-	TArray<FName> Deck;
+	// --- 카드 시스템 ---
+	UFUNCTION(BlueprintCallable, Category = "Card|Battle")
+	void StartBattle();
 
-	// 손패 (Hand) - 카드 ID 목록
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Card System")
-	TArray<FName> Hand;
-
-	// 버린 카드 더미 (Discard Pile) - 카드 ID 목록
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Card System")
-	TArray<FName> DiscardPile;
-
-	// 1. 초기 덱 구성 및 셔플
-	UFUNCTION(BlueprintCallable, Category = "Card System")
-	void InitializeDeck(const TArray<FName> &StartingCardIDs);
-
-	// 2. 카드 뽑기 (Draw)
-	UFUNCTION(BlueprintCallable, Category = "Card System")
+	UFUNCTION(BlueprintCallable, Category = "Card|Battle")
 	void DrawCards(int32 Amount);
 
-	// 3. 버린 카드를 다시 덱으로 섞기
-	UFUNCTION(BlueprintCallable, Category = "Card System")
-	void ShuffleDiscardIntoDeck();
+	UFUNCTION(BlueprintCallable, Category = "Card|Battle")
+	void DiscardCard(int32 HandIndex);
+
+	UFUNCTION(BlueprintCallable, Category = "Card|Battle")
+	void DiscardHand();
+
+	UFUNCTION(BlueprintCallable, Category = "Card|Battle")
+	void ShuffleDiscardIntoDraw();
+
+	UFUNCTION(BlueprintCallable, Category = "Card|Battle")
+	bool ExecuteCard(const FCardData &InCardData, int32 HandIndex, ACardCharacter *InstigatorCharacter, ACardCharacter *TargetCharacter);
+
+	UFUNCTION(BlueprintCallable, Category = "Card|Turn")
+	void EndPlayerTurn(ACardCharacter *PlayerChar, ACardCharacter *EnemyChar);
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Card|Skill Buff")
+	bool bNextCardDoubleDamage = false;
+
+	// --- 마나 데이터 ---
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mana")
+	FManaGroup CurrentMana;
+
+	// --- 마나 제어 함수 ---
+	UFUNCTION(BlueprintCallable, Category = "Mana")
+	void ResetMana();
+
+	UFUNCTION(BlueprintPure, Category = "Mana")
+	bool CanPayMana(const FManaGroup &Cost) const;
+
+	UFUNCTION(BlueprintCallable, Category = "Mana")
+	bool SpendMana(const FManaGroup &Cost);
+
+	UFUNCTION(BlueprintCallable, Category = "Mana")
+	void AddMana(const FManaGroup &InMana);
 };
