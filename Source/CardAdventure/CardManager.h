@@ -36,7 +36,7 @@ public:
 		OnDeckCountsUpdated.Broadcast(DrawPile.Num(), DiscardPile.Num());
 	}
 
-	// --- 덱 데이터 (FCardInstance로 변경) ---
+	// --- 덱 데이터 ---
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Card|Deck")
 	TArray<FCardInstance> Deck;
 
@@ -74,14 +74,20 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Card|Turn")
 	void EndPlayerTurn(ACardCharacter *PlayerChar, ACardCharacter *EnemyChar);
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Card|Skill Buff")
-	bool bNextCardDoubleDamage = false;
+	// ===================================================
+	// ⚔️ 전투 및 상태 효과 시스템 (Combat & Status)
+	// ===================================================
 
-	// --- 마나 데이터 ---
+	// ★ 데미지 계산 (버프/디버프 적용)
+	UFUNCTION(BlueprintPure, Category = "Combat|Damage")
+	int32 CalculateDamage(int32 BaseDamage, ACardCharacter *Attacker, ACardCharacter *Defender);
+
+	// ===================================================
+
+	// --- 마나 데이터 및 제어 ---
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mana")
 	FManaGroup CurrentMana;
 
-	// --- 마나 제어 함수 ---
 	UFUNCTION(BlueprintCallable, Category = "Mana")
 	void ResetMana();
 

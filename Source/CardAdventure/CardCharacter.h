@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
 #include "CardData.h"
+#include "StatusBase.h"
 #include "CardCharacter.generated.h"
 
 class UBoxComponent;
@@ -54,6 +55,18 @@ public:
 	// 방어도 변경 이벤트 디스패처
 	UPROPERTY(BlueprintAssignable, Category = "Combat|Events")
 	FOnBlockChangedSignature OnBlockChanged;
+
+	// ★ 객체화된 상태이상들을 담아둘 배열
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat|Status")
+	TArray<UStatusBase *> ActiveStatuses;
+
+	// 상태이상 부여 함수 (C++ 및 블루프린트 공용)
+	UFUNCTION(BlueprintCallable, Category = "Combat|Status")
+	void AddStatus(TSubclassOf<UStatusBase> StatusClass, int32 Amount);
+
+	// 상태이상 제거/스택 감소용 유틸리티
+	UFUNCTION(BlueprintCallable, Category = "Combat|Status")
+	void RemoveStatus(TSubclassOf<UStatusBase> StatusClass);
 
 	// --- 전투 기능 함수 ---
 	UFUNCTION(BlueprintCallable, Category = "Combat")

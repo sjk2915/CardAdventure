@@ -34,6 +34,40 @@ void ACardCharacter::InitStats(int32 InMaxHP, int32 InCurrentHP)
 	OnHealthChanged.Broadcast(CurrentHealth, MaxHealth);
 }
 
+void ACardCharacter::AddStatus(TSubclassOf<UStatusBase> StatusClass, int32 Amount)
+{
+	if (!StatusClass || Amount <= 0) return;
+
+	// 1. 이미 같은 버프가 있는지 확인 (있으면 스택만 증가)
+	for (UStatusBase *ExistingStatus : ActiveStatuses)
+	{
+		if (ExistingStatus->IsA(StatusClass))
+		{
+			ExistingStatus->StackCount += Amount;
+			return; // 추가했으니 끝!
+		}
+	}
+
+	// 2. 없다면 새로 붕어빵을 구워서 배열에 넣음
+	UStatusBase *NewStatus = NewObject<UStatusBase>(this, StatusClass);
+	NewStatus->OwnerCharacter = this;
+	NewStatus->StackCount = Amount;
+	ActiveStatuses.Add(NewStatus);
+}
+
+void ACardCharacter::RemoveStatus(TSubclassOf<UStatusBase> StatusClass)
+{
+	// 배열을 뒤에서부터 돌면서 해당 클래스와 일치하는 버프를 삭제 (안전한 배열 삭제 방법)
+	for (int32 i = ActiveStatuses.Num() - 1; i >= 0; --i)
+	{
+		if (ActiveStatuses[i]->IsA(StatusClass))
+		{
+			ActiveStatuses.RemoveAt(i);
+			break;
+		}
+	}
+}
+
 void ACardCharacter::TakeDamageCustom(int32 DamageAmount)
 {
 	if (DamageAmount <= 0) return;

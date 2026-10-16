@@ -2,34 +2,28 @@
 #include "CardManager.h"
 #include "Math/UnrealMathUtility.h" // FMath 사용을 위해 포함
 
-void UCardGameInstance::InitializePlayer(EPlayerClass CharClass)
+void UCardGameInstance::InitializePlayer(EPlayerClass CharClass, TSubclassOf<USkillBase> StartingSkillClass)
 {
 	CurrentPlayer.PlayerClass = CharClass;
 
-	// 기존 데이터 초기화 (마나통 & 덱 비우기)
+	// 기존 데이터 초기화
 	CurrentPlayer.MaxMana.Clear();
 	CurrentPlayer.Deck.Empty();
 
-	// 직업별 초기 스탯, 마나, 덱 세팅
+	// 직업별 초기 스탯 및 덱 세팅
 	switch (CharClass)
 	{
 	case EPlayerClass::Knight:
 		CurrentPlayer.MaxHP = 80;
 		CurrentPlayer.CurrentHP = 80;
 		CurrentPlayer.Gold = 99;
-
 		CurrentPlayer.MaxMana.Red = 2;
 		CurrentPlayer.MaxMana.Colorless = 1;
 
 		for (int32 i = 0; i < 5; i++)
 		{
-			FCardInstance StrikeCard;
-			StrikeCard.CardID = FName("K_Strike");
-			CurrentPlayer.Deck.Add(StrikeCard);
-
-			FCardInstance DefendCard;
-			DefendCard.CardID = FName("K_Defend");
-			CurrentPlayer.Deck.Add(DefendCard);
+			FCardInstance StrikeCard; StrikeCard.CardID = FName("K_Strike"); CurrentPlayer.Deck.Add(StrikeCard);
+			FCardInstance DefendCard; DefendCard.CardID = FName("K_Defend"); CurrentPlayer.Deck.Add(DefendCard);
 		}
 		break;
 
@@ -37,24 +31,22 @@ void UCardGameInstance::InitializePlayer(EPlayerClass CharClass)
 		CurrentPlayer.MaxHP = 70;
 		CurrentPlayer.CurrentHP = 70;
 		CurrentPlayer.Gold = 99;
-
 		CurrentPlayer.MaxMana.Green = 2;
 		CurrentPlayer.MaxMana.Colorless = 1;
 
 		for (int32 i = 0; i < 5; i++)
 		{
-			FCardInstance StrikeCard;
-			StrikeCard.CardID = FName("R_Strike");
-			CurrentPlayer.Deck.Add(StrikeCard);
-
-			FCardInstance DefendCard;
-			DefendCard.CardID = FName("R_Defend");
-			CurrentPlayer.Deck.Add(DefendCard);
+			FCardInstance StrikeCard; StrikeCard.CardID = FName("R_Strike"); CurrentPlayer.Deck.Add(StrikeCard);
+			FCardInstance DefendCard; DefendCard.CardID = FName("R_Defend"); CurrentPlayer.Deck.Add(DefendCard);
 		}
 		break;
 	}
 
-	// 모든 세팅이 끝난 후 UI 업데이트 신호 1회 발송
+	// ★ 매개변수로 받은 스킬 클래스를 세팅하고 즉시 객체 생성
+	ActiveSkillClass = StartingSkillClass;
+	InitializeSkill();
+
+	// 모든 세팅 완료 후 신호 발송
 	OnPlayerStatChanged.Broadcast();
 }
 

@@ -13,6 +13,9 @@ class CARDADVENTURE_API USkillBase : public UObject
 	GENERATED_BODY()
 
 public:
+	// 블루프린트에서 World Context 핀이 뜨지 않도록 월드 정보를 제공
+	virtual UWorld *GetWorld() const override;
+
 	// --- 스킬 기본 정보 ---
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill Info")
 	FName SkillName;
@@ -30,7 +33,7 @@ public:
 	// --- ⚡ 블루프린트에서 구현할 이벤트 노드들 ---
 
 	// 1. 스킬을 사용했을 때 (실제 효과 발동 로직을 블루프린트에 작성)
-	UFUNCTION(BlueprintImplementableEvent, Category = "Skill Event")
+	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "Skill Event")
 	void OnSkillExecuted(UCardManager *CardManager);
 
 	// 2. 카드를 냈을 때
@@ -52,4 +55,9 @@ public:
 	// 6. 플레이어 턴이 끝났을 때 (턴당 1회 제한 초기화 등)
 	UFUNCTION(BlueprintImplementableEvent, Category = "Skill Event")
 	void OnTurnEnded();
+
+	// 전투 시작 시 호출 (스택 초기화 및 UI 리셋용)
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Skill Event")
+	void OnBattleStarted();
+	virtual void OnBattleStarted_Implementation() {}
 };

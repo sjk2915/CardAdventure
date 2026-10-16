@@ -71,7 +71,7 @@ public:
 	FPlayerData CurrentPlayer;
 
 	UFUNCTION(BlueprintCallable, Category = "Player Data")
-	void InitializePlayer(EPlayerClass CharClass);
+	void InitializePlayer(EPlayerClass CharClass, TSubclassOf<USkillBase> StartingSkillClass);
 
 	UFUNCTION(BlueprintCallable, Category = "Player Data")
 	void AddGold(int32 Amount);

@@ -44,6 +44,12 @@ void UCardManager::StartBattle()
 				PlayerCharacter->InitStats(GameInst->CurrentPlayer.MaxHP, GameInst->CurrentPlayer.CurrentHP);
 			}
 		}
+
+		// ★ 스킬에게 전투 시작 신호 전달
+		if (GameInst->ActiveSkillInstance)
+		{
+			GameInst->ActiveSkillInstance->OnBattleStarted();
+		}
 	}
 
 	Hand.Empty();
@@ -58,6 +64,7 @@ void UCardManager::StartBattle()
 
 	UpdateDeckCounts();
 	ResetMana();
+
 	DrawCards(5);
 }
 
@@ -111,6 +118,37 @@ void UCardManager::DiscardHand()
 	UpdateDeckCounts();
 }
 
+int32 UCardManager::CalculateDamage(int32 BaseDamage, ACardCharacter *Attacker, ACardCharacter *Defender)
+{
+	int32 FinalDamage = BaseDamage;
+
+	// 1. 공격자의 모든 버프/디버프에게 데미지 변형 기회 제공
+	if (Attacker)
+	{
+		for (UStatusBase *Status : Attacker->ActiveStatuses)
+		{
+			if (Status)
+			{
+				FinalDamage = Status->OnModifyDamageDealt(FinalDamage);
+			}
+		}
+	}
+
+	// 2. 방어자의 모든 버프/디버프에게 데미지 변형 기회 제공
+	if (Defender)
+	{
+		for (UStatusBase *Status : Defender->ActiveStatuses)
+		{
+			if (Status)
+			{
+				FinalDamage = Status->OnModifyDamageTaken(FinalDamage);
+			}
+		}
+	}
+
+	return FMath::Max(0, FinalDamage);
+}
+
 bool UCardManager::ExecuteCard(const FCardData &InCardData, int32 HandIndex, ACardCharacter *InstigatorCharacter, ACardCharacter *TargetCharacter)
 {
 	if (!InstigatorCharacter) return false;
@@ -132,18 +170,12 @@ bool UCardManager::ExecuteCard(const FCardData &InCardData, int32 HandIndex, ACa
 		}
 
 		{
-			int32 FinalDamage = InCardData.Damage;
-			if (bNextCardDoubleDamage && FinalDamage > 0)
-			{
-				FinalDamage *= 2;
-				bNextCardDoubleDamage = false;
-
-				if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Red, TEXT("🔥 스킬 효과: 피해량 2배 발동!"));
-			}
+			// ★ 변경됨: 단순 데미지가 아니라 CalculateDamage 함수를 거쳐 최종 데미지 산출
+			int32 FinalDamage = CalculateDamage(InCardData.Damage, InstigatorCharacter, TargetCharacter);
 
 			TargetCharacter->TakeDamageCustom(FinalDamage);
 
-			// ★ 스킬 객체에 데미지 입힘 이벤트 전달
+			// 스킬 객체에 데미지 입힘 이벤트 전달
 			if (GameInst && GameInst->ActiveSkillInstance)
 			{
 				GameInst->ActiveSkillInstance->OnDamageDealt(FinalDamage);
@@ -154,7 +186,6 @@ bool UCardManager::ExecuteCard(const FCardData &InCardData, int32 HandIndex, ACa
 	case ECardTargetType::Self:
 		InstigatorCharacter->AddBlock(InCardData.Block);
 
-		// ★ 스킬 객체에 방어도 획득 이벤트 전달
 		if (GameInst && GameInst->ActiveSkillInstance)
 		{
 			GameInst->ActiveSkillInstance->OnBlockGained(InCardData.Block);
@@ -167,7 +198,6 @@ bool UCardManager::ExecuteCard(const FCardData &InCardData, int32 HandIndex, ACa
 		break;
 	}
 
-	// ★ 구형 트리거 제거 완료. 새로운 스킬 객체에 카드 사용 이벤트 전달
 	if (GameInst && GameInst->ActiveSkillInstance)
 	{
 		GameInst->ActiveSkillInstance->OnCardPlayed(InCardData.CardID);
