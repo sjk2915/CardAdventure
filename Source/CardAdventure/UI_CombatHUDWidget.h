@@ -3,13 +3,13 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "ManaData.h" 
-#include "UI_BattleHUDWidget.generated.h"
+#include "UI_CombatHUDWidget.generated.h"
 
 class UVerticalBox; // 세로 상자 사용!
 class UUI_ManaOrbWidget;
 
 UCLASS()
-class CARDADVENTURE_API UUI_BattleHUDWidget : public UUserWidget
+class CARDADVENTURE_API UUI_CombatHUDWidget : public UUserWidget
 {
 	GENERATED_BODY()
 

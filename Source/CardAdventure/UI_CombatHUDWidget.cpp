@@ -1,9 +1,9 @@
-#include "UI_BattleHUDWidget.h"
+#include "UI_CombatHUDWidget.h"
 #include "Components/VerticalBox.h"
 #include "Components/VerticalBoxSlot.h"
 #include "UI_ManaOrbWidget.h"
 
-void UUI_BattleHUDWidget::UpdateCurrentMana(const FManaGroup &CurrentMana)
+void UUI_CombatHUDWidget::UpdateCurrentMana(const FManaGroup &CurrentMana)
 {
 	if (!VB_CurrentManaContainer) return;
 
@@ -22,7 +22,7 @@ void UUI_BattleHUDWidget::UpdateCurrentMana(const FManaGroup &CurrentMana)
 	AddOrbsToVerticalBox(VB_CurrentManaContainer, CurrentMana.Colorless, EManaColor::Colorless);
 }
 
-void UUI_BattleHUDWidget::AddOrbsToVerticalBox(UVerticalBox *TargetBox, int32 Count, EManaColor ColorType)
+void UUI_CombatHUDWidget::AddOrbsToVerticalBox(UVerticalBox *TargetBox, int32 Count, EManaColor ColorType)
 {
 	if (!TargetBox || !ManaOrbClass) return;
 

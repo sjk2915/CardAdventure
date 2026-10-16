@@ -86,7 +86,7 @@ void UCardGameInstance::GenerateTestMap()
 			}
 			else if (LayerIndex == 1)
 			{
-				NewNode.NodeType = ENodeType::Shop; // 테스트용 첫방 고정
+				NewNode.NodeType = ENodeType::Combat; // 테스트용 첫방 고정
 			}
 			else if (LayerIndex == TotalLayers - 2)
 			{
